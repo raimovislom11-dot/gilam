@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Order } from '@/lib/types'
 import { useOrders, storeUpdateOrder } from '@/lib/store'
 
-function WorkOrderCard({ order }: { order: Order }) {
+function WorkOrderCard({ order, role }: { order: Order, role?: string }) {
   const [isPending, setIsPending] = useState(false)
 
   const handleComplete = () => {
@@ -69,7 +69,7 @@ function WorkOrderCard({ order }: { order: Order }) {
         {order.umumiyHajm != null && (
           <div className="detail-item"><div className="detail-item-label">📐 Hajm</div><div className="detail-item-value">{order.umumiyHajm} m²</div></div>
         )}
-        {order.summa != null && (
+        {order.summa != null && role !== 'ISHCHI' && (
           <div className="detail-item"><div className="detail-item-label">💰 Summa</div><div className="detail-item-value" style={{ color: 'var(--success)' }}>{formatCurrency(order.summa)}</div></div>
         )}
       </div>
@@ -96,7 +96,7 @@ function WorkOrderCard({ order }: { order: Order }) {
   )
 }
 
-export function IshchiClient() {
+export function IshchiClient({ role }: { role?: string }) {
   const { orders, loading } = useOrders('ISHDA')
 
   if (loading) return <div className="page-header"><h1 className="page-title">Yuklanmoqda...</h1></div>
@@ -121,7 +121,7 @@ export function IshchiClient() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1rem' }}>
-          {orders.map((order) => <WorkOrderCard key={order.id} order={order} />)}
+          {orders.map((order) => <WorkOrderCard key={order.id} order={order} role={role} />)}
         </div>
       )}
     </>

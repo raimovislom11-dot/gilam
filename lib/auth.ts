@@ -14,9 +14,11 @@ export async function requireAuth() {
   return user
 }
 
-export async function requireRole(role: Role) {
+export async function requireRole(role: Role | Role[]) {
   const user = await requireAuth()
-  if (user.role !== role) {
+  const roles = Array.isArray(role) ? role : [role]
+  
+  if (!roles.includes(user.role)) {
     // Redirect to their own dashboard
     const dashboards: Record<Role, string> = {
       ADMIN: '/admin/zakazlar',

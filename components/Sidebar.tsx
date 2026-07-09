@@ -8,9 +8,10 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { useState, useEffect } from 'react'
 
 interface NavItem {
-  href: string
+  href?: string
   label: string
   icon: React.ReactNode
+  children?: { href: string; label: string; icon?: React.ReactNode }[]
 }
 
 interface SidebarProps {
@@ -110,15 +111,38 @@ export function Sidebar({ role, userName, navItems }: SidebarProps) {
 
         {/* Nav */}
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-item ${pathname === item.href ? 'active' : ''}`}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </Link>
+          {navItems.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', flexDirection: 'column' }}>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className={`nav-item ${pathname === item.href ? 'active' : ''}`}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </Link>
+              ) : (
+                <div className="nav-item" style={{ cursor: 'default', color: 'var(--text-secondary)' }}>
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </div>
+              )}
+              {item.children && (
+                <div style={{ paddingLeft: '2.5rem', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', marginBottom: '8px' }}>
+                  {item.children.map(child => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className={`nav-item ${pathname === child.href ? 'active' : ''}`}
+                      style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+                    >
+                      {child.icon && <span className="nav-icon" style={{ transform: 'scale(0.8)' }}>{child.icon}</span>}
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
 
