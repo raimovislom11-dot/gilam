@@ -15,19 +15,32 @@ function getWeekKey(dateStr: string): string {
   return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`
 }
 
-const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
-function getMonthKey(dateStr: string): string {
-  return MONTHS[new Date(dateStr).getMonth()]
-}
-
 function aggregateOrders(
   orders: Order[],
-  period: 'weekly' | 'monthly'
+  period: 'weekly' | 'monthly',
+  selectedMonthStr?: string
 ): { chartData: AnalyticsPoint[]; totals: AnalyticsTotals } {
   const grouped: Record<string, { summa: number; hajm: number; count: number }> = {}
 
-  for (const o of orders) {
-    const label = period === 'weekly' ? getWeekKey(o.createdAt) : getMonthKey(o.createdAt)
+  let filteredOrders = orders
+
+  if (period === 'monthly' && selectedMonthStr) {
+    const [year, month] = selectedMonthStr.split('-')
+    filteredOrders = orders.filter(o => {
+      const d = new Date(o.createdAt)
+      return d.getFullYear() === parseInt(year) && (d.getMonth() + 1) === parseInt(month)
+    })
+  }
+
+  for (const o of filteredOrders) {
+    let label = ''
+    if (period === 'weekly') {
+      label = getWeekKey(o.createdAt)
+    } else {
+      const d = new Date(o.createdAt)
+      label = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`
+    }
+    
     if (!grouped[label]) grouped[label] = { summa: 0, hajm: 0, count: 0 }
     grouped[label].summa += o.summa ?? 0
     grouped[label].hajm += o.umumiyHajm ?? 0
@@ -35,12 +48,20 @@ function aggregateOrders(
   }
 
   const chartData = Object.entries(grouped).map(([label, v]) => ({ label, ...v }))
+  
+  chartData.sort((a, b) => {
+    const [d1, m1] = a.label.split('.')
+    const [d2, m2] = b.label.split('.')
+    if (m1 !== m2) return parseInt(m1) - parseInt(m2)
+    return parseInt(d1) - parseInt(d2)
+  })
 
   const totals: AnalyticsTotals = {
-    summa: orders.reduce((s, o) => s + (o.summa ?? 0), 0),
-    hajm: orders.reduce((s, o) => s + (o.umumiyHajm ?? 0), 0),
-    adyolKorpa: orders.reduce((s, o) => s + (o.adyolSoni ?? 0) + (o.korpaSoni ?? 0), 0),
-    count: orders.length,
+    summa: filteredOrders.reduce((s, o) => s + (o.summa ?? 0), 0),
+    hajm: filteredOrders.reduce((s, o) => s + (o.umumiyHajm ?? 0), 0),
+    adyol: filteredOrders.reduce((s, o) => s + (o.adyolSoni ?? 0), 0),
+    korpa: filteredOrders.reduce((s, o) => s + (o.korpaSoni ?? 0), 0),
+    count: filteredOrders.length,
   }
 
   return { chartData, totals }
@@ -49,10 +70,14 @@ function aggregateOrders(
 export function AdminAnalitikaClient() {
   const { orders, loading } = useAnalytics()
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly')
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`
+  })
 
   const { chartData, totals } = useMemo(() => {
-    return aggregateOrders(orders, period)
-  }, [orders, period])
+    return aggregateOrders(orders, period, selectedMonth)
+  }, [orders, period, selectedMonth])
 
   const formatK = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}M` : `${Math.round(v)}K`
 
@@ -60,14 +85,25 @@ export function AdminAnalitikaClient() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 className="page-title">Analitika</h1>
           <p className="page-subtitle">Yuborilgan zakazlar statistikasi</p>
         </div>
-        <div className="tabs" style={{ marginBottom: 0, width: 'auto' }}>
-          <button className={`tab-btn ${period === 'weekly' ? 'active' : ''}`} onClick={() => setPeriod('weekly')}>Haftalik</button>
-          <button className={`tab-btn ${period === 'monthly' ? 'active' : ''}`} onClick={() => setPeriod('monthly')}>Oylik</button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {period === 'monthly' && (
+            <input 
+              type="month" 
+              className="input" 
+              style={{ width: 'auto', padding: '0.4rem 0.8rem', minHeight: '38px' }}
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            />
+          )}
+          <div className="tabs" style={{ marginBottom: 0, width: 'auto' }}>
+            <button className={`tab-btn ${period === 'weekly' ? 'active' : ''}`} onClick={() => setPeriod('weekly')}>Haftalik</button>
+            <button className={`tab-btn ${period === 'monthly' ? 'active' : ''}`} onClick={() => setPeriod('monthly')}>Oylik</button>
+          </div>
         </div>
       </div>
 
@@ -88,8 +124,13 @@ export function AdminAnalitikaClient() {
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>m²</div>
         </div>
         <div className="stats-card">
-          <div className="stat-label">Adyol + Ko&apos;rpa</div>
-          <div className="stat-number" style={{ color: 'var(--success)' }}>{totals.adyolKorpa}</div>
+          <div className="stat-label">Adyol soni</div>
+          <div className="stat-number" style={{ color: 'var(--success)' }}>{totals.adyol}</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>dona</div>
+        </div>
+        <div className="stats-card">
+          <div className="stat-label">Ko&apos;rpa soni</div>
+          <div className="stat-number" style={{ color: 'var(--success)' }}>{totals.korpa}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>dona</div>
         </div>
         <div className="stats-card">
@@ -104,7 +145,7 @@ export function AdminAnalitikaClient() {
           <div className="empty-state-icon">📊</div>
           <p style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Hali ma&apos;lumot yo&apos;q</p>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Zakazlar yuborilgandan so&apos;ng grafik ko&apos;rinadi
+            Ushbu davr uchun zakazlar topilmadi
           </p>
         </div>
       ) : (

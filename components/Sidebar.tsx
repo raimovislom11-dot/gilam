@@ -35,6 +35,11 @@ const roleLabels: Record<string, string> = {
 export function Sidebar({ role, userName, navItems }: SidebarProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }))
+  }
 
   // Close sidebar on navigation
   useEffect(() => {
@@ -122,12 +127,24 @@ export function Sidebar({ role, userName, navItems }: SidebarProps) {
                   {item.label}
                 </Link>
               ) : (
-                <div className="nav-item" style={{ cursor: 'default', color: 'var(--text-secondary)' }}>
+                <div 
+                  className="nav-item" 
+                  style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}
+                  onClick={() => toggleGroup(item.label)}
+                >
                   <span className="nav-icon">{item.icon}</span>
-                  {item.label}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <span>{item.label}</span>
+                    <svg 
+                      width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+                      style={{ transform: openGroups[item.label] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
                 </div>
               )}
-              {item.children && (
+              {item.children && openGroups[item.label] && (
                 <div style={{ paddingLeft: '2.5rem', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', marginBottom: '8px' }}>
                   {item.children.map(child => (
                     <Link

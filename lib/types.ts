@@ -20,7 +20,9 @@ export interface Order {
   pardaOgirligi?: number | null
   korpaSoni?: number | null
   umumiyHajm?: number | null
+  eskiHajm?: number | null
   summa?: number | null
+  rasmlar?: string[]
   izohAdmin?: string | null
   qarzHolati: QarzHolati
   tolanganSumma: number
@@ -65,6 +67,28 @@ export interface AnalyticsPoint {
 export interface AnalyticsTotals {
   summa: number
   hajm: number
-  adyolKorpa: number   // adyolSoni + korpaSoni combined
+  adyol: number
+  korpa: number
   count: number
+}
+
+// ─── Workers & Attendance ───────────────────────────────────────────────────
+
+export interface Worker {
+  id: number
+  ism: string
+  telefon: string
+  lavozim?: string
+  createdAt: string
+}
+
+export type AttendanceStatus = 'KELDI' | 'KELMADI' | 'RUXSAT'
+
+export interface Attendance {
+  id: number
+  workerId: number
+  sana: string // YYYY-MM-DD
+  status: AttendanceStatus
+  izoh: string
+  createdAt: string
 }

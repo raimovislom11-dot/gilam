@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import type { Order, OrderStatus, QarzHolati } from './types'
+import type { Order, OrderStatus, QarzHolati, Worker, Attendance, AttendanceStatus } from './types'
 
 const ORDERS_KEY = 'gilam_orders'
 const ID_KEY = 'gilam_next_id'
@@ -263,4 +263,110 @@ export function useDebt() {
   }, [])
 
   return { ...result, loading }
+}
+
+// ─── Workers & Attendance ───────────────────────────────────────────────────
+
+const WORKERS_KEY = 'gilam_workers'
+const ATTENDANCE_KEY = 'gilam_attendances'
+
+export function readWorkers(): Worker[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(WORKERS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+export function writeWorkers(workers: Worker[]): void {
+  localStorage.setItem(WORKERS_KEY, JSON.stringify(workers))
+  window.dispatchEvent(new Event('gilam-workers-changed'))
+}
+
+export function storeCreateWorker(data: { ism: string; telefon: string; lavozim?: string }): Worker {
+  const workers = readWorkers()
+  const worker: Worker = {
+    id: nextId(),
+    ism: data.ism,
+    telefon: data.telefon,
+    lavozim: data.lavozim,
+    createdAt: new Date().toISOString()
+  }
+  workers.push(worker)
+  writeWorkers(workers)
+  return worker
+}
+
+export function useWorkers(): { workers: Worker[]; loading: boolean } {
+  const [workers, setWorkers] = useState<Worker[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = () => {
+      setWorkers(readWorkers())
+      setLoading(false)
+    }
+    load()
+    window.addEventListener('gilam-workers-changed', load)
+    return () => window.removeEventListener('gilam-workers-changed', load)
+  }, [])
+
+  return { workers, loading }
+}
+
+export function readAttendances(): Attendance[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(ATTENDANCE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+export function writeAttendances(atts: Attendance[]): void {
+  localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(atts))
+  window.dispatchEvent(new Event('gilam-attendances-changed'))
+}
+
+export function storeSaveAttendance(workerId: number, sana: string, status: AttendanceStatus, izoh: string): void {
+  const atts = readAttendances()
+  const idx = atts.findIndex(a => a.workerId === workerId && a.sana === sana)
+  if (idx !== -1) {
+    atts[idx].status = status
+    atts[idx].izoh = izoh
+  } else {
+    atts.push({
+      id: nextId(),
+      workerId,
+      sana,
+      status,
+      izoh,
+      createdAt: new Date().toISOString()
+    })
+  }
+  writeAttendances(atts)
+}
+
+export function useAttendances(sana?: string): { attendances: Attendance[]; loading: boolean } {
+  const [attendances, setAttendances] = useState<Attendance[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = () => {
+      let all = readAttendances()
+      if (sana) {
+        all = all.filter(a => a.sana === sana)
+      }
+      setAttendances(all)
+      setLoading(false)
+    }
+    load()
+    window.addEventListener('gilam-attendances-changed', load)
+    return () => window.removeEventListener('gilam-attendances-changed', load)
+  }, [sana])
+
+  return { attendances, loading }
 }

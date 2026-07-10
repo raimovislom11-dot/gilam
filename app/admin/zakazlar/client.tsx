@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, fileToBase64 } from '@/lib/utils'
 import type { Order } from '@/lib/types'
 import { useOrders, storeUpdateOrder } from '@/lib/store'
 
@@ -12,6 +12,26 @@ export function AdminZakazlarClient() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
+  const [editingImages, setEditingImages] = useState<string[]>([])
+
+  const openEditModal = (order: Order) => {
+    setSelectedOrder(order)
+    setEditingImages(order.rasmlar || [])
+    setError('')
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return
+    try {
+      const newImages = await Promise.all(
+        Array.from(e.target.files).map(file => fileToBase64(file))
+      )
+      setEditingImages(prev => [...prev, ...newImages])
+    } catch (err) {
+      console.error('Image upload failed', err)
+      setError('Rasmni yuklashda xatolik yuz berdi')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -33,6 +53,7 @@ export function AdminZakazlarClient() {
         korpaSoni: num('korpaSoni'),
         umumiyHajm: flt('umumiyHajm'),
         summa: flt('summa'),
+        rasmlar: editingImages,
         izohAdmin: parse('izohAdmin') || null,
         tahrirlaganAdminLogin: 'admin',
       })
@@ -121,7 +142,7 @@ export function AdminZakazlarClient() {
                   {formatDate(order.createdAt)}
                 </span>
                 <span className="badge badge-yangi">YANGI</span>
-                <button className="btn btn-primary btn-sm" onClick={() => setSelectedOrder(order)}>
+                <button className="btn btn-primary btn-sm" onClick={() => openEditModal(order)}>
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -184,6 +205,22 @@ export function AdminZakazlarClient() {
                 <div className="input-group">
                   <label className="input-label" htmlFor="summa">Summa (so&apos;m)</label>
                   <input id="summa" name="summa" type="number" step="100" min="0" className="input" placeholder="0" defaultValue={selectedOrder.summa ?? ''} />
+                </div>
+              </div>
+              <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="input-label">Rasmlar</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {editingImages.map((src, i) => (
+                    <div key={i} style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="biriktirilgan" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button type="button" onClick={() => setEditingImages(prev => prev.filter((_, idx) => idx !== i))} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>&times;</button>
+                    </div>
+                  ))}
+                  <label style={{ width: 80, height: 80, borderRadius: 8, border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <input type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </label>
                 </div>
               </div>
               <div className="input-group">
