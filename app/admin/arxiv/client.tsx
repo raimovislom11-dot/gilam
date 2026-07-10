@@ -6,7 +6,7 @@ import { useOrders } from '@/lib/store'
 
 export function AdminArxivClient() {
   const { orders: allOrders, loading } = useOrders()
-  const orders = allOrders.filter(o => o.status === 'YUBORILDI')
+  const orders = allOrders.filter(o => o.status === 'YUBORILDI' && o.qarzHolati === 'TOLANGAN')
 
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')

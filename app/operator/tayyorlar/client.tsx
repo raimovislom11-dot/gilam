@@ -11,7 +11,7 @@ function OrderCard({ order }: { order: Order }) {
   const handleSend = () => {
     setIsPending(true)
     storeUpdateOrder(order.id, { 
-      status: 'YUBORILDI',
+      status: 'JARAYONDA',
       chiqarganOperatorLogin: 'Operator',
     })
     // No need to reset setIsPending to false if the card unmounts,

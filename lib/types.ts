@@ -1,7 +1,7 @@
 // ─── Shared Types — mirrors Spring Boot entities ────────────────────────────
 
 export type Role = 'ADMIN' | 'OPERATOR' | 'ISHCHI'
-export type OrderStatus = 'YANGI' | 'TAHRIRLANDI' | 'ISHDA' | 'TAYYOR' | 'YUBORILDI'
+export type OrderStatus = 'YANGI' | 'TAHRIRLANDI' | 'ISHDA' | 'TAYYOR' | 'JARAYONDA' | 'YUBORILDI'
 export type QarzHolati = 'TOLANMAGAN' | 'QISMAN' | 'TOLANGAN'
 
 /**

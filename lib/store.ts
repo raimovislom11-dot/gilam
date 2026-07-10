@@ -247,7 +247,7 @@ export function useDebt() {
     const load = () => {
       const all = readOrders()
       const debtOrders = all.filter(
-        (o) => o.qarzHolati !== 'TOLANGAN' && o.summa != null
+        (o) => o.status === 'YUBORILDI' && o.qarzHolati !== 'TOLANGAN' && o.summa != null
       )
       const totalDebt = debtOrders.reduce(
         (sum, o) => sum + Math.max(0, (o.summa ?? 0) - o.tolanganSumma),
