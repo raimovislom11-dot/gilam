@@ -12,19 +12,19 @@ export default function LoginPage() {
       <div className="login-card">
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: 64, height: 64,
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            borderRadius: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem',
-            margin: '0 auto 1rem',
-            boxShadow: '0 8px 32px var(--primary-glow)',
-          }}>
-            🪄
-          </div>
+          <img 
+            src="/logo.jpeg" 
+            alt="Oqqo'rg'on Professional Gilam Yuvish" 
+            style={{ 
+              width: 100, height: 100, 
+              borderRadius: '50%', 
+              objectFit: 'cover',
+              margin: '0 auto 1rem',
+              boxShadow: '0 8px 32px var(--primary-glow)',
+            }} 
+          />
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }} className="gradient-text">
-            Gilam
+            Oqqo'rg'on
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.375rem' }}>
             Boshqaruv tizimiga kirish
