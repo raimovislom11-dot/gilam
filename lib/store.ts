@@ -183,6 +183,45 @@ export function storeCreateOrder(data: {
   return order
 }
 
+export function storeReorder(data: {
+  mijozIsmi: string
+  manzil: string
+  telefon: string
+  izohOperator?: string | null
+  gilamSoni?: number | null
+  adyolSoni?: number | null
+  pardaOgirligi?: number | null
+  korpaSoni?: number | null
+  umumiyHajm?: number | null
+  summa?: number | null
+  izohAdmin?: string | null
+}): Order {
+  const orders = readOrders()
+  const order: Order = {
+    id: nextId(),
+    mijozIsmi: data.mijozIsmi,
+    manzil: data.manzil,
+    telefon: data.telefon,
+    izohOperator: data.izohOperator || null,
+    izohAdmin: data.izohAdmin || null,
+    status: 'YANGI', // Status starts as YANGI even if it's copied
+    gilamSoni: data.gilamSoni,
+    adyolSoni: data.adyolSoni,
+    pardaOgirligi: data.pardaOgirligi,
+    korpaSoni: data.korpaSoni,
+    umumiyHajm: data.umumiyHajm,
+    summa: data.summa,
+    qarzHolati: 'TOLANMAGAN',
+    tolanganSumma: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    yaratganOperatorLogin: 'Admin',
+  }
+  orders.push(order)
+  writeOrders(orders)
+  return order
+}
+
 export function storeUpdateOrder(id: number, updates: Partial<Order>): boolean {
   const orders = readOrders()
   const idx = orders.findIndex((o) => o.id === id)

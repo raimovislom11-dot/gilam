@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { formatCurrency, formatDate, formatNumber, getQarzLabel } from '@/lib/utils'
-import { useOrders } from '@/lib/store'
+import { useOrders, storeReorder } from '@/lib/store'
+import type { Order } from '@/lib/types'
 
 export function AdminArxivClient() {
   const { orders: allOrders, loading } = useOrders()
@@ -12,6 +13,8 @@ export function AdminArxivClient() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [reorderData, setReorderData] = useState<Order | null>(null)
+  const [isPending, setIsPending] = useState(false)
 
   const filtered = orders.filter((o) => {
     const matchSearch =
@@ -118,10 +121,108 @@ export function AdminArxivClient() {
                     {order.bajarganIshchiLogin && <span>🔧 Bajardi: {order.bajarganIshchiLogin}</span>}
                     {order.chiqarganOperatorLogin && <span>📤 Chiqardi: {order.chiqarganOperatorLogin}</span>}
                   </div>
+                  <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button 
+                      className="btn btn-primary" 
+                      onClick={(e) => { e.stopPropagation(); setReorderData(order) }}
+                    >
+                      🔄 Qayta zakaz
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {reorderData && (
+        <div className="modal-backdrop" style={{ overflowY: 'auto', padding: '2rem 0' }}>
+          <div className="modal-content" style={{ maxWidth: 700, margin: 'auto' }}>
+            <h2 className="page-title" style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Qayta zakaz kiritish</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              setIsPending(true)
+              const formData = new FormData(e.currentTarget)
+              storeReorder({
+                mijozIsmi: formData.get('mijozIsmi') as string,
+                telefon: formData.get('telefon') as string,
+                manzil: formData.get('manzil') as string,
+                izohOperator: formData.get('izohOperator') as string,
+                izohAdmin: formData.get('izohAdmin') as string,
+                gilamSoni: formData.get('gilamSoni') ? Number(formData.get('gilamSoni')) : null,
+                adyolSoni: formData.get('adyolSoni') ? Number(formData.get('adyolSoni')) : null,
+                pardaOgirligi: formData.get('pardaOgirligi') ? Number(formData.get('pardaOgirligi')) : null,
+                korpaSoni: formData.get('korpaSoni') ? Number(formData.get('korpaSoni')) : null,
+                umumiyHajm: formData.get('umumiyHajm') ? Number(formData.get('umumiyHajm')) : null,
+                summa: formData.get('summa') ? Number(formData.get('summa')) : null,
+              })
+              setIsPending(false)
+              setReorderData(null)
+              alert('Yangi zakaz barcha ma\'lumotlar bilan muvaffaqiyatli yaratildi!')
+            }} className="form-grid">
+              
+              <div className="form-grid-2">
+                <div className="input-group">
+                  <label className="input-label">Mijoz ismi</label>
+                  <input name="mijozIsmi" required className="input" defaultValue={reorderData.mijozIsmi} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Telefon</label>
+                  <input name="telefon" required className="input" defaultValue={reorderData.telefon} />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Manzil</label>
+                <input name="manzil" required className="input" defaultValue={reorderData.manzil} />
+              </div>
+
+              <div className="form-grid-2">
+                <div className="input-group">
+                  <label className="input-label">Gilam soni (dona)</label>
+                  <input name="gilamSoni" type="number" step="1" className="input" defaultValue={reorderData.gilamSoni || ''} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Adyol soni (dona)</label>
+                  <input name="adyolSoni" type="number" step="1" className="input" defaultValue={reorderData.adyolSoni || ''} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Ko&apos;rpa soni (dona)</label>
+                  <input name="korpaSoni" type="number" step="1" className="input" defaultValue={reorderData.korpaSoni || ''} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Parda og&apos;irligi (kg)</label>
+                  <input name="pardaOgirligi" type="number" step="0.1" className="input" defaultValue={reorderData.pardaOgirligi || ''} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Umumiy hajm (m²)</label>
+                  <input name="umumiyHajm" type="number" step="0.1" className="input" defaultValue={reorderData.umumiyHajm || ''} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Summa (so&apos;m)</label>
+                  <input name="summa" type="number" step="1000" className="input" defaultValue={reorderData.summa || ''} />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Operator izohi</label>
+                <textarea name="izohOperator" className="input" rows={2} defaultValue={reorderData.izohOperator || ''} />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Admin izohi</label>
+                <textarea name="izohAdmin" className="input" rows={2} defaultValue={reorderData.izohAdmin || ''} />
+              </div>
+
+              <div className="form-actions" style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setReorderData(null)}>Bekor qilish</button>
+                <button type="submit" className="btn btn-primary" disabled={isPending}>
+                  {isPending ? 'Saqlanmoqda...' : 'Saqlash'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </>
