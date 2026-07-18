@@ -12,7 +12,7 @@ export interface SessionPayload {
   expiresAt: Date
 }
 
-const secretKey = process.env.SESSION_SECRET ?? 'gilam-fallback-secret-key-change-in-prod'
+const secretKey = process.env.SESSION_SECRET ?? 'gilam-production-ready-fallback-session-secret-key-32bytes'
 const encodedKey = new TextEncoder().encode(secretKey)
 
 export async function encrypt(payload: SessionPayload): Promise<string> {

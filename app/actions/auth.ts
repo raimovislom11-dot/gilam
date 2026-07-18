@@ -6,7 +6,7 @@ import type { AuthResponse } from '@/lib/types'
 
 export type LoginState = { error?: string } | undefined
 
-const API_URL = process.env.API_URL ?? 'http://localhost:8080'
+const API_URL = process.env.API_URL ?? 'https://gilam.213.199.51.43.sslip.io'
 
 export async function login(prevState: LoginState, formData: FormData): Promise<LoginState> {
   const loginInput = (formData.get('login') as string)?.trim()
@@ -16,32 +16,36 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
     return { error: 'Login va parol kiritish shart' }
   }
 
-  let role: Role
-  let userId: number
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ login: loginInput, password }),
+    })
 
-  if (loginInput === 'admin' && password === 'admin') {
-    role = 'ADMIN'
-    userId = 1
-  } else if (loginInput === 'Operator' && password === 'Operator') {
-    role = 'OPERATOR'
-    userId = 2
-  } else if (loginInput === 'Ishchi' && password === 'Ishchi') {
-    role = 'ISHCHI'
-    userId = 3
-  } else {
-    return { error: 'Login yoki parol noto\'g\'ri' }
+    if (!res.ok) {
+      const errorMsg = await res.text()
+      return { error: errorMsg || 'Login yoki parol noto\'g\'ri' }
+    }
+
+    const data = (await res.json()) as AuthResponse
+    await createSession(data.userId, data.role, data.token)
+
+    const dashboards: Record<Role, string> = {
+      ADMIN: '/admin/zakazlar',
+      OPERATOR: '/operator/yangi-zakaz',
+      ISHCHI: '/ishchi',
+    }
+
+    redirect(dashboards[data.role])
+  } catch (err: any) {
+    if (err.message && err.message.includes('NEXT_REDIRECT')) {
+      throw err;
+    }
+    return { error: err.message || 'Tizimga kirishda xatolik yuz berdi. Qayta urinib ko\'ring.' }
   }
-
-  // Create a dummy token for local storage mode
-  await createSession(userId, role, 'dummy-token')
-
-  const dashboards: Record<Role, string> = {
-    ADMIN: '/admin/zakazlar',
-    OPERATOR: '/operator/yangi-zakaz',
-    ISHCHI: '/ishchi',
-  }
-
-  redirect(dashboards[role])
 }
 
 export async function logout() {
